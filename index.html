@@ -657,16 +657,28 @@ function getLagledereNavn(lagNr) {
     .map(s => s.navn);
 }
 
+function fmtLagledere(lagNr) {
+  const all = Object.values(spillere)
+    .filter(s => s.rolle === 'lagleder' && s.lag.includes(lagNr))
+    .sort((a, b) => {
+      if (a.prioritet && !b.prioritet) return -1;
+      if (!a.prioritet && b.prioritet) return 1;
+      return a.navn.localeCompare(b.navn, 'no');
+    });
+  const prio = all.filter(s => s.prioritet).map(s => s.navn);
+  const rest = all.filter(s => !s.prioritet).map(s => s.navn);
+  return prio.length && rest.length
+    ? `${prio.join(', ')} + ${rest.join(', ')}`
+    : [...prio, ...rest].join(', ');
+}
+
 function renderLagledere() {
   const el = document.getElementById('lagleder-linje');
   if (!el) return;
   if (aktivLag === 'alle') {
-    const l1 = getLagledereNavn(1).join(', ');
-    const l2 = getLagledereNavn(2).join(', ');
-    el.innerHTML = `<span class="ll-team">Oppsal 1:</span> ${l1}<br><span class="ll-team">Oppsal 2:</span> ${l2}`;
+    el.innerHTML = `<span class="ll-team">Oppsal 1:</span> ${fmtLagledere(1)}<br><span class="ll-team">Oppsal 2:</span> ${fmtLagledere(2)}`;
   } else {
-    const names = getLagledereNavn(aktivLag).join(' · ');
-    el.innerHTML = `<span class="ll-team">Lagledere:</span> ${names}`;
+    el.innerHTML = `<span class="ll-team">Lagledere:</span> ${fmtLagledere(aktivLag)}`;
   }
 }
 
