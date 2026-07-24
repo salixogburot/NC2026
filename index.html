@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oppsal IF – Norway Cup 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: #EAF2FB;
+    color: #0A1F4A;
+    min-height: 100vh;
+    padding: 0 0 3rem;
+  }
+
+  header {
+    background: #fff;
+    border-bottom: 1px solid #D0E3F5;
+    padding: 1.1rem 1rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: #0A1F4A;
+    margin-bottom: 10px;
+  }
+
+  .header-sub {
+    font-size: 12px;
+    color: #7AAAE0;
+    margin-top: -6px;
+    margin-bottom: 10px;
+    font-weight: 400;
+  }
+
+  .day-btns {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .day-btns::-webkit-scrollbar { display: none; }
+
+  .dbtn {
+    flex-shrink: 0;
+    padding: 9px 10px;
+    border: 1px solid #D0E3F5;
+    background: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #2D5FBF;
+    transition: all .15s;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .dbtn.active {
+    background: #1E4696;
+    color: #fff;
+    border-color: #1E4696;
+  }
+
+  .lag-btns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+
+  .spiller-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .spiller-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #D0E3F5;
+    border-radius: 99px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #0A1F4A;
+    outline: none;
+    transition: border-color .15s;
+    background: #fff;
+  }
+
+  .spiller-input:focus { border-color: #7AAAE0; }
+  .spiller-input::placeholder { color: #A8C5EC; }
+
+  .spiller-clear {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #7AAAE0;
+    padding: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .spiller-clear.vis { display: flex; align-items: center; }
+
+  .spiller-tag {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #1E4696;
+    padding: 3px 10px 3px 12px;
+    background: #D0E3F5;
+    border-radius: 99px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .spiller-tag.vis { display: inline-flex; }
+
+  .spiller-wrap {
+    position: relative;
+    flex: 1;
+  }
+
+  .spiller-suggestions {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #D0E3F5;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(10,31,74,.08);
+    overflow: hidden;
+    z-index: 20;
+  }
+
+  .spiller-suggestions.vis { display: block; }
+
+  .sug-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .sug-item:not(:last-child) { border-bottom: 1px solid #EAF2FB; }
+  .sug-item:hover, .sug-item.focused { background: #EAF2FB; }
+
+  .sug-initial { font-weight: 600; color: #0A1F4A; letter-spacing: 0.5px; }
+  .sug-match { color: #4A7ED4; }
+
+  .sug-lag {
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 99px;
+    padding: 2px 9px;
+    flex-shrink: 0;
+  }
+
+  .sug-left { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .sug-navn { font-size: 11px; color: #7AAAE0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sug-right { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+  .rolle-pill {
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 99px;
+    padding: 2px 8px;
+    flex-shrink: 0;
+    background: #f0f4fa;
+    color: #7AAAE0;
+  }
+  .rolle-lagleder { background: #fff3e0; color: #c26212; }
+
+  /* Day button colors — pastel blue / pink / purple */
+  .dbtn.d-sun { background: #FDE8F2; border-color: #F5CCDE; color: #B05878; }
+  .dbtn.d-mon { background: #E8F1FD; border-color: #CCDAF5; color: #3D6BAA; }
+  .dbtn.d-tue { background: #F0E8FD; border-color: #DCCAF5; color: #6855AA; }
+  .dbtn.d-wed { background: #FDE8FB; border-color: #F5CCF0; color: #A845A0; }
+  .dbtn.d-thu { background: #E8EBFD; border-color: #CCCEF5; color: #4555AA; }
+  .dbtn.d-fri { background: #F5E8FD; border-color: #E5CCF5; color: #8848AA; }
+
+  .dbtn.d-sun.active { background: #F2B0CC; border-color: #F2B0CC; color: #6A2040; }
+  .dbtn.d-mon.active { background: #AECAF0; border-color: #AECAF0; color: #1A3D6A; }
+  .dbtn.d-tue.active { background: #C8B0F0; border-color: #C8B0F0; color: #30206A; }
+  .dbtn.d-wed.active { background: #F0AEEA; border-color: #F0AEEA; color: #6A1868; }
+  .dbtn.d-thu.active { background: #B0B8F0; border-color: #B0B8F0; color: #1E286A; }
+  .dbtn.d-fri.active { background: #D8AEED; border-color: #D8AEED; color: #46186A; }
+
+  /* Match card day tints */
+  .kamp.d-sun { background: #FEF3F7; border-color: #F5D8E5; border-left: 3px solid #E8A0BC; }
+  .kamp.d-mon { background: #F3F7FE; border-color: #D5E3F7; border-left: 3px solid #9CBBEA; }
+  .kamp.d-tue { background: #F7F3FE; border-color: #E0D5F7; border-left: 3px solid #BEAAEC; }
+  .kamp.d-wed { background: #FEF3FD; border-color: #F5D5F2; border-left: 3px solid #E8A0E2; }
+  .kamp.d-thu { background: #F3F4FE; border-color: #D5D8F7; border-left: 3px solid #A0AAEC; }
+  .kamp.d-fri { background: #FAF3FE; border-color: #ECD5F7; border-left: 3px solid #CCA0EC; }
+
+  .lagleder-linje {
+    font-size: 11px;
+    color: #A8C5EC;
+    margin-bottom: 8px;
+    padding: 0 2px;
+    line-height: 1.5;
+  }
+  .ll-team { font-weight: 600; color: #7AAAE0; }
+
+  .lbtn {
+    padding: 8px 4px;
+    border: 1px solid #D0E3F5;
+    background: #fff;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #2D5FBF;
+    transition: all .15s;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .lbtn.active-alle { background: #0A1F4A; color: #fff; border-color: #0A1F4A; }
+  .lbtn.active-1    { background: #1E4696; color: #fff; border-color: #1E4696; }
+  .lbtn.active-2    { background: #1B6E8F; color: #fff; border-color: #1B6E8F; }
+
+  main {
+    padding: 1rem 0.85rem 0;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .count {
+    font-size: 12px;
+    color: #7AAAE0;
+    margin-bottom: 0.6rem;
+    padding: 0 2px;
+  }
+
+  .kamp {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #D0E3F5;
+    padding: 13px 14px 11px;
+    margin-bottom: 8px;
+  }
+
+  .kamp-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 7px;
+  }
+
+  .lag-badge {
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    flex-shrink: 0;
+  }
+
+  .b1 { background: #D0E3F5; color: #1E4696; }
+  .b2 { background: #cce8f0; color: #1B6E8F; }
+
+  .kamp-tidblokk {
+    text-align: right;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+
+  .kamp-tid {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+    color: #0A1F4A;
+  }
+
+  .kamp-dag {
+    font-size: 11px;
+    color: #A8C5EC;
+    margin-top: 2px;
+    text-align: right;
+  }
+
+  .kamp-teams {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0A1F4A;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+
+  .kamp-arena {
+    font-size: 12px;
+    color: #7AAAE0;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .kamp-arena svg { flex-shrink: 0; opacity: .6; }
+
+  .nedtelling {
+    margin-top: 9px;
+    padding-top: 9px;
+    border-top: 1px solid #D0E3F5;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #A8C5EC;
+    min-height: 22px;
+  }
+
+  .nd-label { color: #A8C5EC; }
+  .nd-tall { font-size: 14px; font-weight: 700; color: #0A1F4A; }
+  .nd-snart { font-size: 14px; font-weight: 700; color: #1B6E8F; font-variant-numeric: tabular-nums; letter-spacing: 0.5px; }
+
+  .nd-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .nd-startet   { background: #D0E3F5; color: #1E4696; }
+  .nd-avsluttet { background: #EAF2FB; color: #A8C5EC; }
+
+  .bursdag-linje {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #b04878;
+    font-weight: 500;
+  }
+
+  .empty {
+    text-align: center;
+    color: #A8C5EC;
+    padding: 3rem 1rem;
+    font-size: 14px;
+  }
+
+  @media (min-width: 480px) {
+    .kamp-tid { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">Oppsal IF – Norway Cup 2026</div>
+  <div class="header-sub">26.–31. juli 2026 · Ekebergsletta, Oslo</div>
+
+  <div class="day-btns">
+    <button class="dbtn active" onclick="setDay('alle')">Alle dager</button>
+    <button class="dbtn d-sun" onclick="setDay('søndag')">Søn 26/07</button>
+    <button class="dbtn d-mon" onclick="setDay('mandag')">Man 27/07</button>
+    <button class="dbtn d-tue" onclick="setDay('tirsdag')">Tir 28/07</button>
+    <button class="dbtn d-wed" onclick="setDay('onsdag')">Ons 29/07</button>
+    <button class="dbtn d-thu" onclick="setDay('torsdag')">Tor 30/07</button>
+    <button class="dbtn d-fri" onclick="setDay('fredag')">Fre 31/07</button>
+  </div>
+
+  <div class="lag-btns">
+    <button class="lbtn active-alle" onclick="setLag('alle')">Alle lag</button>
+    <button class="lbtn" onclick="setLag(1)">Oppsal 1</button>
+    <button class="lbtn" onclick="setLag(2)">Oppsal 2</button>
+  </div>
+  <div class="lagleder-linje" id="lagleder-linje"></div>
+
+  <div class="spiller-row">
+    <div class="spiller-wrap">
+      <input id="spiller-input" class="spiller-input" type="text" placeholder="Finn spiller – initialer, f.eks FRV"
+        oninput="onSpillerInput(this.value)" onkeydown="onSpillerKey(event)"
+        autocomplete="off" autocorrect="off" spellcheck="false" />
+      <div class="spiller-suggestions" id="spiller-suggestions"></div>
+    </div>
+    <button class="spiller-clear" id="spiller-clear" onclick="clearSpiller()" title="Fjern filter">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span class="spiller-tag" id="spiller-tag"></span>
+  </div>
+</header>
+
+<main>
+  <div class="count" id="count"></div>
+  <div id="liste"></div>
+</main>
+
+<script>
+const kamper = [
+  // Oppsal 1 – Girls 11* Mandag
+  {lag:1,dag:'mandag', hjem:'Lyn Fotball United',        borte:'Oppsal 1',              tid:'14:00',arena:'09 EK7'},
+  {lag:1,dag:'mandag', hjem:'Kolbotn IL Hvit',           borte:'Oppsal 1',              tid:'18:30',arena:'09 EK7'},
+  {lag:1,dag:'onsdag', hjem:'Ullern IF',                 borte:'Oppsal 1',              tid:'16:15',arena:'14 EK7'},
+  {lag:1,dag:'onsdag', hjem:'Oppsal 1',                  borte:'Lørenskog Rød',         tid:'18:30',arena:'09 EK7'},
+  {lag:1,dag:'fredag', hjem:'Oppsal 1',                  borte:'Frigg Oslo FK',         tid:'14:00',arena:'10 EK7', bursdag:'Gratulerer med dagen, Iben!'},
+  {lag:1,dag:'fredag', hjem:'Oppsal 1',                  borte:'KFUM-Kam. Oslo 2',      tid:'16:15',arena:'14 EK7', bursdag:'Gratulerer med dagen, Iben!'},
+  // Oppsal 2 – Girls 11* Søndag 1
+  {lag:2,dag:'søndag', hjem:'Oppsal 2',                  borte:'Forward, SK',           tid:'14:00',arena:'09 EK7', bursdag:'Gratulerer med dagen i går, Alma!'},
+  {lag:2,dag:'søndag', hjem:'Oppsal 2',                  borte:'Bækkelagets SK Gul',    tid:'16:15',arena:'10 EK7', bursdag:'Gratulerer med dagen i går, Alma!'},
+  {lag:2,dag:'tirsdag',hjem:'KFUM-Kam. Oslo 1',          borte:'Oppsal 2',              tid:'14:00',arena:'10 EK7'},
+  {lag:2,dag:'tirsdag',hjem:'Rustad Abildsø SK',         borte:'Oppsal 2',              tid:'16:15',arena:'09 EK7'},
+  {lag:2,dag:'torsdag',hjem:'Oppsal 2',                  borte:'Lørenskog Blå',         tid:'14:00',arena:'09 EK7'},
+  {lag:2,dag:'torsdag',hjem:'Oppsal 2',                  borte:'Heming, IL',            tid:'18:30',arena:'08 EK7'},
+];
+
+const dagDato = {
+  søndag:  '2026-07-26',
+  mandag:  '2026-07-27',
+  tirsdag: '2026-07-28',
+  onsdag:  '2026-07-29',
+  torsdag: '2026-07-30',
+  fredag:  '2026-07-31',
+};
+
+const dagLabel = {
+  søndag:  'Søn 26. juli',
+  mandag:  'Man 27. juli',
+  tirsdag: 'Tir 28. juli',
+  onsdag:  'Ons 29. juli',
+  torsdag: 'Tor 30. juli',
+  fredag:  'Fre 31. juli',
+};
+
+const badges  = { 1:'b1', 2:'b2' };
+
+// Generated by generate.py — initials for all; first name for lagledere only.
+const spillere = {
+  // --- Oppsal 1 spillere ---
+  'AA':{lag:[1], rolle:'spiller'},
+  'AWK':{lag:[1], rolle:'spiller'},
+  'ES':{lag:[1], rolle:'spiller'},
+  'FRV':{lag:[1], rolle:'spiller'},
+  'HMH':{lag:[1], rolle:'spiller'},
+  'IBT':{lag:[1], rolle:'spiller'},
+  'IST':{lag:[1], rolle:'spiller'},
+  'IUTO':{lag:[1], rolle:'spiller'},
+  'KR':{lag:[1], rolle:'spiller'},
+  // --- Oppsal 1 lagledere ---
+  'KMT':{lag:[1], rolle:'lagleder', navn:'Knut Marius', prioritet:true},
+  'EUR':{lag:[1], rolle:'lagleder', navn:'Eilif'},
+  'MKS':{lag:[1], rolle:'lagleder', navn:'Mette'},
+  'SBT':{lag:[1], rolle:'lagleder', navn:'Sigrid'},
+  // --- Oppsal 2 spillere ---
+  'ADN':{lag:[2], rolle:'spiller'},
+  'AHR':{lag:[2], rolle:'spiller'},
+  'ALBB':{lag:[2], rolle:'spiller'},
+  'ESS':{lag:[2], rolle:'spiller'},
+  'IB':{lag:[2], rolle:'spiller'},
+  'JWN':{lag:[2], rolle:'spiller'},
+  'LBM':{lag:[2], rolle:'spiller'},
+  'SNK':{lag:[2], rolle:'spiller'},
+  'STS':{lag:[2], rolle:'spiller'},
+  'YFW':{lag:[2], rolle:'spiller'},
+  // --- Oppsal 2 lagledere ---
+  'AW':{lag:[2], rolle:'lagleder', navn:'Anders', prioritet:true},
+  'HDN':{lag:[2], rolle:'lagleder', navn:'Halvor'},
+  'KEB':{lag:[2], rolle:'lagleder', navn:'Karol'},
+  'KFW':{lag:[2], rolle:'lagleder', navn:'Kristin'},
+  // --- Same initials across teams ---
+  'OSM':{lag:[1,2], rolle:'spiller'},
+};
+
+let aktivLag = 'alle', aktivDag = 'alle', aktivSpiller = null;
+let synlige = [];
+
+function kampStart(k) {
+  const [hh, mm] = k.tid.split(':').map(Number);
+  const d = new Date(dagDato[k.dag]);
+  d.setHours(hh, mm, 0, 0);
+  return d;
+}
+
+function nedtellingHTML(k) {
+  const now   = new Date();
+  const start = kampStart(k);
+  const slutt = new Date(start.getTime() + 30 * 60 * 1000);
+
+  if (now >= slutt) {
+    return `<span class="nd-pill nd-avsluttet">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Avsluttet
+    </span>`;
+  }
+
+  if (now >= start) {
+    return `<span class="nd-pill nd-startet">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+      Startet
+    </span>`;
+  }
+
+  const sek  = Math.floor((start - now) / 1000);
+  const min  = Math.floor(sek / 60);
+  const timer = Math.floor(min / 60);
+  const dager = Math.floor(timer / 24);
+
+  const pinSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>`;
+
+  if (min < 60) {
+    const s = sek % 60;
+    const m = min % 60;
+    return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-snart">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+  }
+  if (timer < 24) {
+    const h = timer;
+    const m = min % 60;
+    return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-tall">${h}t ${m}min</span>`;
+  }
+  return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
+}
+
+const dagOrder  = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag'];
+const dagKlasse = { søndag:'d-sun', mandag:'d-mon', tirsdag:'d-tue', onsdag:'d-wed', torsdag:'d-thu', fredag:'d-fri' };
+
+function getLagledereNavn(lagNr) {
+  return Object.values(spillere)
+    .filter(s => s.rolle === 'lagleder' && s.lag.includes(lagNr))
+    .sort((a, b) => {
+      if (a.prioritet && !b.prioritet) return -1;
+      if (!a.prioritet && b.prioritet) return 1;
+      return a.navn.localeCompare(b.navn, 'no');
+    })
+    .map(s => s.navn);
+}
+
+function renderLagledere() {
+  const el = document.getElementById('lagleder-linje');
+  if (!el) return;
+  if (aktivLag === 'alle') {
+    const l1 = getLagledereNavn(1).join(', ');
+    const l2 = getLagledereNavn(2).join(', ');
+    el.innerHTML = `<span class="ll-team">Oppsal 1:</span> ${l1} &nbsp;·&nbsp; <span class="ll-team">Oppsal 2:</span> ${l2}`;
+  } else {
+    const names = getLagledereNavn(aktivLag).join(' · ');
+    el.innerHTML = `<span class="ll-team">Lagledere:</span> ${names}`;
+  }
+}
+
+function setDay(dag) {
+  aktivDag = dag;
+  document.querySelectorAll('.dbtn').forEach((b, i) => {
+    b.classList.toggle('active', ['alle',...dagOrder][i] === dag);
+  });
+  render();
+}
+
+const lagColors = { 1:'b1', 2:'b2' };
+const lagNames  = { 1:'Oppsal 1', 2:'Oppsal 2' };
+let sugFocusIdx = -1;
+
+function setLag(lag) {
+  aktivLag = lag;
+  aktivSpiller = null;
+  document.getElementById('spiller-input').value = '';
+  document.getElementById('spiller-clear').classList.remove('vis');
+  document.getElementById('spiller-tag').classList.remove('vis');
+  const btns = document.querySelectorAll('.lbtn');
+  btns.forEach(b => b.className = 'lbtn');
+  if (lag === 'alle') btns[0].classList.add('active-alle');
+  else btns[lag].classList.add('active-' + lag);
+  renderLagledere();
+  render();
+}
+
+function getSuggestions(key) {
+  if (!key) return [];
+  return Object.keys(spillere)
+    .filter(i => i.startsWith(key))
+    .sort()
+    .slice(0, 6);
+}
+
+function renderSuggestions(key) {
+  const box = document.getElementById('spiller-suggestions');
+  const matches = getSuggestions(key);
+  sugFocusIdx = -1;
+  if (!key || matches.length === 0) { box.classList.remove('vis'); return; }
+
+  box.innerHTML = matches.map((init) => {
+    const info = spillere[init];
+    const highlighted = `<span class="sug-match">${init.slice(0, key.length)}</span>${init.slice(key.length)}`;
+    const rollePill = `<span class="rolle-pill${info.rolle === 'lagleder' ? ' rolle-lagleder' : ''}">${info.rolle}</span>`;
+    const lagPills = info.lag.map(l =>
+      `<span class="sug-lag ${lagColors[l]}">${lagNames[l]}</span>`
+    ).join(' ');
+    const navnHTML = info.rolle === 'lagleder'
+      ? `<span class="sug-navn">${info.navn}</span>`
+      : '';
+    return `<div class="sug-item" data-init="${init}" onmousedown="selectSuggestion('${init}')">
+      <div class="sug-left">
+        <span class="sug-initial">${highlighted}</span>
+        ${navnHTML}
+      </div>
+      <div class="sug-right">${rollePill}${lagPills}</div>
+    </div>`;
+  }).join('');
+  box.classList.add('vis');
+}
+
+function selectSuggestion(init) {
+  document.getElementById('spiller-input').value = init;
+  document.getElementById('spiller-suggestions').classList.remove('vis');
+  applySpiller(init);
+}
+
+function onSpillerInput(val) {
+  const key = val.trim().toUpperCase();
+  document.getElementById('spiller-clear').classList.toggle('vis', val.length > 0);
+  renderSuggestions(key);
+
+  if (!key) {
+    aktivSpiller = null;
+    document.getElementById('spiller-tag').classList.remove('vis');
+    resetLagBtns();
+    render();
+    return;
+  }
+
+  applySpiller(key);
+}
+
+function applySpiller(key) {
+  const tag = document.getElementById('spiller-tag');
+  const info = spillere[key] || null;
+  aktivSpiller = info ? info.lag : null;
+
+  if (info) {
+    tag.textContent = info.lag.length > 1 ? `Lag ${info.lag.join(' & ')}` : lagNames[info.lag[0]];
+    tag.classList.add('vis');
+  } else {
+    tag.textContent = 'Ikke funnet';
+    tag.classList.add('vis');
+  }
+  resetLagBtns();
+  render();
+}
+
+function onSpillerKey(e) {
+  const box = document.getElementById('spiller-suggestions');
+  const items = box.querySelectorAll('.sug-item');
+  if (!box.classList.contains('vis') || items.length === 0) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    sugFocusIdx = Math.min(sugFocusIdx + 1, items.length - 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    sugFocusIdx = Math.max(sugFocusIdx - 1, 0);
+  } else if (e.key === 'Enter' && sugFocusIdx >= 0) {
+    e.preventDefault();
+    selectSuggestion(items[sugFocusIdx].dataset.init);
+    return;
+  } else if (e.key === 'Escape') {
+    box.classList.remove('vis');
+    return;
+  } else { return; }
+
+  items.forEach((el, i) => el.classList.toggle('focused', i === sugFocusIdx));
+}
+
+function clearSpiller() {
+  aktivSpiller = null;
+  document.getElementById('spiller-input').value = '';
+  document.getElementById('spiller-clear').classList.remove('vis');
+  document.getElementById('spiller-tag').classList.remove('vis');
+  document.getElementById('spiller-suggestions').classList.remove('vis');
+  resetLagBtns();
+  render();
+}
+
+function resetLagBtns() {
+  const btns = document.querySelectorAll('.lbtn');
+  btns.forEach(b => b.className = 'lbtn');
+  if (aktivLag === 'alle') btns[0].classList.add('active-alle');
+  else btns[aktivLag].classList.add('active-' + aktivLag);
+}
+
+function render() {
+  synlige = kamper
+    .map((k, i) => ({ ...k, _i: i }))
+    .filter(k => {
+      const lagOK = aktivSpiller
+        ? aktivSpiller.includes(k.lag)
+        : (aktivLag === 'alle' || k.lag === aktivLag);
+      return lagOK && (aktivDag === 'alle' || k.dag === aktivDag);
+    })
+    .sort((a, b) => {
+      const di = dagOrder.indexOf(a.dag) - dagOrder.indexOf(b.dag);
+      return di !== 0 ? di : a.tid.localeCompare(b.tid);
+    });
+
+  document.getElementById('count').textContent = synlige.length + ' kamper';
+
+  const el = document.getElementById('liste');
+  if (!synlige.length) {
+    el.innerHTML = '<div class="empty">Ingen kamper funnet</div>';
+    return;
+  }
+
+  el.innerHTML = synlige.map((k, i) => `
+    <div class="kamp ${dagKlasse[k.dag]}">
+      <div class="kamp-top">
+        <span class="lag-badge ${badges[k.lag]}">Oppsal ${k.lag}</span>
+        <div class="kamp-tidblokk">
+          <div class="kamp-tid">${k.tid}</div>
+          <div class="kamp-dag">${dagLabel[k.dag]}</div>
+        </div>
+      </div>
+      <div class="kamp-teams">${k.hjem} – ${k.borte}</div>
+      <div class="kamp-arena">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        ${k.arena}
+      </div>
+      <div class="nedtelling" id="nd-${i}">${nedtellingHTML(k)}</div>
+      ${k.bursdag ? `<div class="bursdag-linje">${k.bursdag}</div>` : ''}
+    </div>`
+  ).join('');
+}
+
+function tick() {
+  synlige.forEach((k, i) => {
+    const el = document.getElementById('nd-' + i);
+    if (el) el.innerHTML = nedtellingHTML(k);
+  });
+}
+
+renderLagledere();
+render();
+setInterval(tick, 1000);
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.spiller-wrap')) {
+    document.getElementById('spiller-suggestions').classList.remove('vis');
+  }
+});
+</script>
+</body>
+</html>
