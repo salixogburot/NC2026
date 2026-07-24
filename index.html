@@ -814,7 +814,8 @@ function render() {
 
   const el = document.getElementById('liste');
   if (!synlige.length) {
-    el.innerHTML = '<div class="empty">Ingen kamper funnet</div>';
+    const header = aktivDag !== 'alle' ? `<h3 class="dag-header">${dagLabelFull[aktivDag]}</h3>` : '';
+    el.innerHTML = `${header}<div class="empty">Ingen kamper funnet</div>`;
     return;
   }
 
