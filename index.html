@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Oppsal IF – Norway Cup 2026</title>
+<title>Oppsal J2015 – Norway Cup 2026</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -411,7 +411,7 @@
 <body>
 
 <header>
-  <div class="header-title">Oppsal IF – Norway Cup 2026</div>
+  <div class="header-title">Oppsal J2015 – Norway Cup 2026</div>
   <div class="header-sub">26.–31. juli 2026 · Ekebergsletta, Oslo</div>
 
   <div class="day-btns">
@@ -535,6 +535,7 @@ function fillWeather() {
   synlige.forEach((k, i) => {
     const el = document.getElementById('wx-' + i);
     if (!el) return;
+    if (kampErAvsluttet(k)) return;
     const wx = lookupWeather(k.dag, k.tid);
     if (!wx) return;
     const precipPart = wx.precip != null ? `${wx.precip}% sjanse for nedbør · ` : '';
@@ -589,6 +590,10 @@ function kampStart(k) {
   const d = new Date(dagDato[k.dag]);
   d.setHours(hh, mm, 0, 0);
   return d;
+}
+
+function kampErAvsluttet(k) {
+  return new Date() >= new Date(kampStart(k).getTime() + 30 * 60 * 1000);
 }
 
 function nedtellingHTML(k) {
@@ -852,8 +857,12 @@ function render() {
 
 function tick() {
   synlige.forEach((k, i) => {
-    const el = document.getElementById('nd-' + i);
-    if (el) el.innerHTML = nedtellingHTML(k);
+    const nd = document.getElementById('nd-' + i);
+    if (nd) nd.innerHTML = nedtellingHTML(k);
+    if (kampErAvsluttet(k)) {
+      const wx = document.getElementById('wx-' + i);
+      if (wx && wx.innerHTML) wx.innerHTML = '';
+    }
   });
 }
 
