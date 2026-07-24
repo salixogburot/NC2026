@@ -387,6 +387,15 @@
   }
   .kamp-wx-label { font-size: 10px; color: #B8D5EF; margin-left: 3px; }
 
+  .dag-header {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0A1F4A;
+    letter-spacing: -0.3px;
+    margin: 1.1rem 0 0.5rem 2px;
+  }
+  .dag-header:first-child { margin-top: 0; }
+
   .empty {
     text-align: center;
     color: #A8C5EC;
@@ -487,6 +496,15 @@ const dagLabel = {
   fredag:  'Fre 31. juli',
 };
 
+const dagLabelFull = {
+  søndag:  'Søndag 26. juli',
+  mandag:  'Mandag 27. juli',
+  tirsdag: 'Tirsdag 28. juli',
+  onsdag:  'Onsdag 29. juli',
+  torsdag: 'Torsdag 30. juli',
+  fredag:  'Fredag 31. juli',
+};
+
 const badges  = { 1:'b1', 2:'b2' };
 
 let wxData = null;
@@ -519,8 +537,8 @@ function fillWeather() {
     if (!el) return;
     const wx = lookupWeather(k.dag, k.tid);
     if (!wx) return;
-    const precipStr = wx.precip != null ? ` · ${wx.precip}% nedbør` : '';
-    el.innerHTML = `${wx.icon} ${wx.temp}°${precipStr}<span class="kamp-wx-label">prognose</span>`;
+    const precipPart = wx.precip != null ? `${wx.precip}% sjanse for nedbør · ` : '';
+    el.innerHTML = `${wx.icon} ${wx.temp}° · ${precipPart}<span class="kamp-wx-label">prognose</span>`;
   });
 }
 
@@ -800,8 +818,17 @@ function render() {
     return;
   }
 
-  el.innerHTML = synlige.map((k, i) => `
-    <div class="kamp ${dagKlasse[k.dag]}">
+  let lastDag = null;
+  el.innerHTML = synlige.map((k, i) => {
+    let header = '';
+    if (aktivDag === 'alle' && k.dag !== lastDag) {
+      header = `<h3 class="dag-header">${dagLabelFull[k.dag]}</h3>`;
+      lastDag = k.dag;
+    } else if (aktivDag !== 'alle' && lastDag === null) {
+      header = `<h3 class="dag-header">${dagLabelFull[k.dag]}</h3>`;
+      lastDag = k.dag;
+    }
+    return `${header}<div class="kamp ${dagKlasse[k.dag]}">
       <div class="kamp-top">
         <span class="lag-badge ${badges[k.lag]}">Oppsal ${k.lag}</span>
         <div class="kamp-tidblokk">
@@ -817,8 +844,8 @@ function render() {
       <div class="kamp-wx" id="wx-${i}"></div>
       <div class="nedtelling" id="nd-${i}">${nedtellingHTML(k)}</div>
       ${k.bursdag ? `<div class="bursdag-linje">${k.bursdag}</div>` : ''}
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
   if (wxData) fillWeather();
 }
 
