@@ -88,10 +88,10 @@
 
   .spiller-input {
     flex: 1;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border: 1px solid #D0E3F5;
     border-radius: 99px;
-    font-size: 13px;
+    font-size: 12px;
     font-family: inherit;
     color: #0A1F4A;
     outline: none;
@@ -190,14 +190,20 @@
   }
   .rolle-lagleder { background: #fff3e0; color: #c26212; }
 
+  .quick-links {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
   .banekart-link {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 8px 12px;
+    padding: 7px 11px;
     border: 1px solid #D0E3F5;
     border-radius: 99px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     color: #2D5FBF;
     background: #fff;
@@ -419,6 +425,8 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <span class="spiller-tag" id="spiller-tag"></span>
+  </div>
+  <div class="quick-links">
     <a class="banekart-link" href="https://norwaycup.no/wp-content/uploads/2026/07/Banekart-NC2026-2.pdf" target="_blank" rel="noopener">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
       Banekart
@@ -581,7 +589,7 @@ function renderLagledere() {
   if (aktivLag === 'alle') {
     const l1 = getLagledereNavn(1).join(', ');
     const l2 = getLagledereNavn(2).join(', ');
-    el.innerHTML = `<span class="ll-team">Oppsal 1:</span> ${l1} &nbsp;·&nbsp; <span class="ll-team">Oppsal 2:</span> ${l2}`;
+    el.innerHTML = `<span class="ll-team">Oppsal 1:</span> ${l1}<br><span class="ll-team">Oppsal 2:</span> ${l2}`;
   } else {
     const names = getLagledereNavn(aktivLag).join(' · ');
     el.innerHTML = `<span class="ll-team">Lagledere:</span> ${names}`;
