@@ -379,6 +379,14 @@
     font-weight: 500;
   }
 
+  .kamp-wx {
+    font-size: 12px;
+    color: #7AAAE0;
+    margin-top: 4px;
+    min-height: 0;
+  }
+  .kamp-wx-label { font-size: 10px; color: #B8D5EF; margin-left: 3px; }
+
   .empty {
     text-align: center;
     color: #A8C5EC;
@@ -480,6 +488,40 @@ const dagLabel = {
 };
 
 const badges  = { 1:'b1', 2:'b2' };
+
+let wxData = null;
+
+function wmoIcon(code) {
+  if (code === 0) return '☀️';
+  if (code <= 2)  return '⛅';
+  if (code <= 3)  return '☁️';
+  if (code <= 48) return '🌫️';
+  if (code <= 57) return '🌦️';
+  if (code <= 67) return '🌧️';
+  if (code <= 77) return '🌨️';
+  if (code <= 82) return '🌦️';
+  if (code <= 86) return '🌨️';
+  return '⛈️';
+}
+
+function lookupWeather(dag, tid) {
+  if (!wxData) return null;
+  const idx = wxData.times.indexOf(`${dagDato[dag]}T${tid}`);
+  if (idx === -1) return null;
+  return { icon: wmoIcon(wxData.code[idx]), temp: Math.round(wxData.temp[idx]), precip: wxData.precip[idx] };
+}
+
+function fillWeather() {
+  if (!wxData) return;
+  synlige.forEach((k, i) => {
+    const el = document.getElementById('wx-' + i);
+    if (!el) return;
+    const wx = lookupWeather(k.dag, k.tid);
+    if (!wx) return;
+    const precipStr = wx.precip != null ? ` · ${wx.precip}% nedbør` : '';
+    el.innerHTML = `${wx.icon} ${wx.temp}°${precipStr}<span class="kamp-wx-label">prognose</span>`;
+  });
+}
 
 const spillere = {
   // --- Oppsal 1 spillere ---
@@ -771,10 +813,12 @@ function render() {
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
         ${k.arena}
       </div>
+      <div class="kamp-wx" id="wx-${i}"></div>
       <div class="nedtelling" id="nd-${i}">${nedtellingHTML(k)}</div>
       ${k.bursdag ? `<div class="bursdag-linje">${k.bursdag}</div>` : ''}
     </div>`
   ).join('');
+  if (wxData) fillWeather();
 }
 
 function tick() {
@@ -787,6 +831,14 @@ function tick() {
 renderLagledere();
 render();
 setInterval(tick, 1000);
+
+fetch('https://api.open-meteo.com/v1/forecast?latitude=59.887&longitude=10.762&hourly=temperature_2m,precipitation_probability,weathercode&start_date=2026-07-26&end_date=2026-07-31&timezone=Europe%2FOslo')
+  .then(r => r.ok ? r.json() : Promise.reject())
+  .then(d => {
+    wxData = { times: d.hourly.time, temp: d.hourly.temperature_2m, precip: d.hourly.precipitation_probability, code: d.hourly.weathercode };
+    fillWeather();
+  })
+  .catch(() => {});
 
 document.addEventListener('click', e => {
   if (!e.target.closest('.spiller-wrap')) {
