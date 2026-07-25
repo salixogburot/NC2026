@@ -351,6 +351,16 @@
 
   .kamp-arena svg { flex-shrink: 0; opacity: .6; }
 
+  .oppmote-linje {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #A8C5EC;
+  }
+  .oppmote-linje:empty { display: none; }
+
   .nedtelling {
     margin-top: 9px;
     padding-top: 9px;
@@ -602,6 +612,35 @@ function kampStart(k) {
 
 function kampErAvsluttet(k) {
   return new Date() >= new Date(kampStart(k).getTime() + 30 * 60 * 1000);
+}
+
+function oppmoteHTML(k) {
+  const now     = new Date();
+  const start   = kampStart(k);
+  const oppmote = new Date(start.getTime() - 35 * 60 * 1000);
+
+  if (now >= start) return '';
+
+  const clockSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+
+  if (now >= oppmote) {
+    return `${clockSVG} <span class="nd-label">Seneste oppmøte nå!</span>`;
+  }
+
+  const sek   = Math.floor((oppmote - now) / 1000);
+  const min   = Math.floor(sek / 60);
+  const timer = Math.floor(min / 60);
+  const dager = Math.floor(timer / 24);
+
+  if (min < 60) {
+    const s = sek % 60;
+    const m = min % 60;
+    return `${clockSVG} <span class="nd-label">Seneste oppmøte om</span> <span class="nd-snart">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+  }
+  if (timer < 24) {
+    return `${clockSVG} <span class="nd-label">Seneste oppmøte om</span> <span class="nd-tall">${timer}t ${min % 60}min</span>`;
+  }
+  return `${clockSVG} <span class="nd-label">Seneste oppmøte om</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
 }
 
 function nedtellingHTML(k) {
@@ -868,6 +907,7 @@ function render() {
         ${k.arena}
       </div>
       <div class="kamp-wx" id="wx-${i}"></div>
+      <div class="oppmote-linje" id="om-${i}">${oppmoteHTML(k)}</div>
       <div class="nedtelling" id="nd-${i}">${nedtellingHTML(k)}</div>
       ${k.bursdag ? `<div class="bursdag-linje">${k.bursdag}</div>` : ''}
     </div>`;
@@ -879,6 +919,8 @@ function tick() {
   synlige.forEach((k, i) => {
     const nd = document.getElementById('nd-' + i);
     if (nd) nd.innerHTML = nedtellingHTML(k);
+    const om = document.getElementById('om-' + i);
+    if (om) om.innerHTML = oppmoteHTML(k);
     if (kampErAvsluttet(k)) {
       const wx = document.getElementById('wx-' + i);
       if (wx && wx.innerHTML) wx.innerHTML = '';
