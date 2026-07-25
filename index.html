@@ -343,7 +343,7 @@
 
   .kamp-arena {
     font-size: 12px;
-    color: #7AAAE0;
+    color: #4A5568;
     display: flex;
     align-items: center;
     gap: 3px;
@@ -357,7 +357,7 @@
     align-items: center;
     gap: 5px;
     font-size: 12px;
-    color: #A8C5EC;
+    color: #4A5568;
   }
   .oppmote-linje:empty { display: none; }
 
@@ -373,7 +373,7 @@
     min-height: 22px;
   }
 
-  .nd-label { color: #A8C5EC; }
+  .nd-label { color: #4A5568; }
   .nd-tall { font-size: 14px; font-weight: 700; color: #0A1F4A; }
   .nd-snart { font-size: 14px; font-weight: 700; color: #1B6E8F; font-variant-numeric: tabular-nums; letter-spacing: 0.5px; }
 
@@ -399,7 +399,7 @@
 
   .kamp-wx {
     font-size: 12px;
-    color: #7AAAE0;
+    color: #4A5568;
     margin-top: 4px;
     min-height: 0;
   }
@@ -621,10 +621,8 @@ function oppmoteHTML(k) {
 
   if (now >= start) return '';
 
-  const clockSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-
   if (now >= oppmote) {
-    return `${clockSVG} <span class="nd-label">Seneste oppmøte nå!</span>`;
+    return `❗ <span class="nd-label">Seneste oppmøte nå!</span>`;
   }
 
   const sek   = Math.floor((oppmote - now) / 1000);
@@ -635,12 +633,12 @@ function oppmoteHTML(k) {
   if (min < 60) {
     const s = sek % 60;
     const m = min % 60;
-    return `${clockSVG} <span class="nd-label">Seneste oppmøte om</span> <span class="nd-snart">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+    return `❗ <span class="nd-label">Seneste oppmøte om</span> <span class="nd-snart">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
   }
   if (timer < 24) {
-    return `${clockSVG} <span class="nd-label">Seneste oppmøte om</span> <span class="nd-tall">${timer}t ${min % 60}min</span>`;
+    return `❗ <span class="nd-label">Seneste oppmøte om</span> <span class="nd-tall">${timer}t ${min % 60}min</span>`;
   }
-  return `${clockSVG} <span class="nd-label">Seneste oppmøte om</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
+  return `❗ <span class="nd-label">Seneste oppmøte om</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
 }
 
 function nedtellingHTML(k) {
@@ -667,19 +665,17 @@ function nedtellingHTML(k) {
   const timer = Math.floor(min / 60);
   const dager = Math.floor(timer / 24);
 
-  const pinSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>`;
-
   if (min < 60) {
     const s = sek % 60;
     const m = min % 60;
-    return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-snart">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+    return `⚽ <span class="nd-label">Avspark om</span> <span class="nd-snart">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
   }
   if (timer < 24) {
     const h = timer;
     const m = min % 60;
-    return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-tall">${h}t ${m}min</span>`;
+    return `⚽ <span class="nd-label">Avspark om</span> <span class="nd-tall">${h}t ${m}min</span>`;
   }
-  return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
+  return `⚽ <span class="nd-label">Avspark om</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
 }
 
 const dagOrder  = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag'];
