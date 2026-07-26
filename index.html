@@ -253,6 +253,8 @@
     line-height: 1.5;
   }
   .ll-team { font-weight: 600; color: #7AAAE0; }
+  .ll-note { display: block; font-style: italic; color: #8CA6C4; margin: 2px 0 6px; }
+  .ll-note:last-child { margin-bottom: 0; }
 
   .lbtn {
     padding: 8px 4px;
@@ -710,10 +712,11 @@ function fmtLagledere(lagNr) {
 function renderLagledere() {
   const el = document.getElementById('lagleder-linje');
   if (!el) return;
+  const oppmoteNote = '<span class="ll-note">Oppmøte 30–45 minutter før avspark</span>';
   if (aktivLag === 'alle') {
-    el.innerHTML = `<span class="ll-team">Oppsal 1:</span> ${fmtLagledere(1)}<br><span class="ll-team">Oppsal 2:</span> ${fmtLagledere(2)}`;
+    el.innerHTML = `<span class="ll-team">Oppsal 1:</span> ${fmtLagledere(1)}<br><span class="ll-team">Oppsal 2:</span> ${fmtLagledere(2)}${oppmoteNote}`;
   } else {
-    el.innerHTML = `<span class="ll-team">Lagledere:</span> ${fmtLagledere(aktivLag)}`;
+    el.innerHTML = `<span class="ll-team">Lagledere:</span> ${fmtLagledere(aktivLag)}${oppmoteNote}`;
   }
 }
 
