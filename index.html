@@ -280,11 +280,28 @@
     margin: 0 auto;
   }
 
+  .count-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+    padding: 0 2px;
+  }
+
   .count {
     font-size: 12px;
     color: #7AAAE0;
-    margin-bottom: 0.6rem;
-    padding: 0 2px;
+  }
+
+  .avsluttede-toggle {
+    background: none;
+    border: none;
+    color: #4A7ED4;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
   }
 
   .kamp {
@@ -293,6 +310,24 @@
     border: 1px solid #D0E3F5;
     padding: 13px 14px 11px;
     margin-bottom: 8px;
+  }
+
+  #neste-kamp:empty { display: none; }
+
+  .neste-kamp-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: #7AAAE0;
+    margin-bottom: 6px;
+    padding: 0 2px;
+  }
+
+  .kamp-pin {
+    border: 1.5px solid #1E4696;
+    box-shadow: 0 2px 10px rgba(30, 70, 150, .12);
+    margin-bottom: 1.1rem;
   }
 
   .kamp-top {
@@ -476,7 +511,11 @@
 </header>
 
 <main>
-  <div class="count" id="count"></div>
+  <div class="count-row">
+    <div class="count" id="count"></div>
+    <button class="avsluttede-toggle" id="avsluttede-toggle" onclick="toggleAvsluttede()">Vis avsluttede</button>
+  </div>
+  <div id="neste-kamp"></div>
   <div id="liste"></div>
 </main>
 
@@ -603,6 +642,7 @@ const spillere = {
 };
 
 let aktivLag = 'alle', aktivDag = 'alle', aktivSpiller = null;
+let visAvsluttede = false;
 let synlige = [];
 
 function kampStart(k) {
@@ -614,6 +654,70 @@ function kampStart(k) {
 
 function kampErAvsluttet(k) {
   return new Date() >= new Date(kampStart(k).getTime() + 30 * 60 * 1000);
+}
+
+function lagFilterOK(k) {
+  return aktivSpiller ? aktivSpiller.includes(k.lag) : (aktivLag === 'alle' || k.lag === aktivLag);
+}
+
+function matcherFilter(k) {
+  return lagFilterOK(k) && (aktivDag === 'alle' || k.dag === aktivDag);
+}
+
+function finnNesteKamp() {
+  return kamper
+    .map((k, i) => ({ ...k, _i: i }))
+    .filter(k => lagFilterOK(k) && !kampErAvsluttet(k))
+    .sort((a, b) => {
+      const di = dagOrder.indexOf(a.dag) - dagOrder.indexOf(b.dag);
+      return di !== 0 ? di : a.tid.localeCompare(b.tid);
+    })[0] || null;
+}
+
+function finnAktivNesteKamp() {
+  const k = finnNesteKamp();
+  return k && (aktivDag === 'alle' || aktivDag === k.dag) ? k : null;
+}
+
+function renderNesteKamp() {
+  const el = document.getElementById('neste-kamp');
+  const k = finnAktivNesteKamp();
+  if (!k) { el.innerHTML = ''; return; }
+
+  el.innerHTML = `<h3 class="dag-header">${dagLabelFull[k.dag]}</h3>
+    <div class="neste-kamp-label">⭐ Neste kamp</div>
+    <div class="kamp kamp-pin ${dagKlasse[k.dag]}">
+      <div class="kamp-top">
+        <span class="lag-badge ${badges[k.lag]}">Oppsal ${k.lag}</span>
+        <div class="kamp-tidblokk">
+          <div class="kamp-tid">${k.tid}</div>
+          <div class="kamp-dag">${dagLabel[k.dag]}</div>
+        </div>
+      </div>
+      <div class="kamp-teams">${k.hjem} – ${k.borte}</div>
+      <div class="kamp-arena">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        ${k.arena}
+      </div>
+      <div class="kamp-wx" id="wx-neste"></div>
+      <div class="oppmote-linje" id="om-neste">${oppmoteHTML(k)}</div>
+      <div class="nedtelling" id="nd-neste">${nedtellingHTML(k)}</div>
+      ${k.bursdag ? `<div class="bursdag-linje">${k.bursdag}</div>` : ''}
+    </div>`;
+
+  if (wxData) {
+    const wx = lookupWeather(k.dag, k.tid);
+    if (wx) {
+      const precipPart = wx.precip != null ? `${wx.precip}% sjanse for nedbør · ` : '';
+      document.getElementById('wx-neste').innerHTML = `${wx.icon} ${wx.temp}° · ${precipPart}<span class="kamp-wx-label">prognose</span>`;
+    }
+  }
+}
+
+function toggleAvsluttede() {
+  visAvsluttede = !visAvsluttede;
+  document.getElementById('avsluttede-toggle').textContent = visAvsluttede ? 'Skjul avsluttede' : 'Vis avsluttede';
+  render();
 }
 
 function oppmoteHTML(k) {
@@ -860,13 +964,12 @@ function resetLagBtns() {
 }
 
 function render() {
+  const neste = finnAktivNesteKamp();
   synlige = kamper
     .map((k, i) => ({ ...k, _i: i }))
     .filter(k => {
-      const lagOK = aktivSpiller
-        ? aktivSpiller.includes(k.lag)
-        : (aktivLag === 'alle' || k.lag === aktivLag);
-      return lagOK && (aktivDag === 'alle' || k.dag === aktivDag);
+      const erNeste = neste && k._i === neste._i;
+      return matcherFilter(k) && (visAvsluttede || !kampErAvsluttet(k)) && !erNeste;
     })
     .sort((a, b) => {
       const di = dagOrder.indexOf(a.dag) - dagOrder.indexOf(b.dag);
@@ -877,12 +980,14 @@ function render() {
 
   const el = document.getElementById('liste');
   if (!synlige.length) {
-    const header = aktivDag !== 'alle' ? `<h3 class="dag-header">${dagLabelFull[aktivDag]}</h3>` : '';
-    el.innerHTML = `${header}<div class="empty">Ingen kamper funnet</div>`;
+    const header = aktivDag !== 'alle' && !neste ? `<h3 class="dag-header">${dagLabelFull[aktivDag]}</h3>` : '';
+    const melding = kamper.some(matcherFilter) ? 'Alle kamper avsluttet' : 'Ingen kamper funnet';
+    el.innerHTML = `${header}<div class="empty">${melding}</div>`;
+    renderNesteKamp();
     return;
   }
 
-  let lastDag = null;
+  let lastDag = neste ? neste.dag : null;
   el.innerHTML = synlige.map((k, i) => {
     let header = '';
     if (aktivDag === 'alle' && k.dag !== lastDag) {
@@ -912,9 +1017,14 @@ function render() {
     </div>`;
   }).join('');
   if (wxData) fillWeather();
+  renderNesteKamp();
 }
 
 function tick() {
+  if (!visAvsluttede && synlige.some(kampErAvsluttet)) {
+    render();
+    return;
+  }
   synlige.forEach((k, i) => {
     const nd = document.getElementById('nd-' + i);
     if (nd) nd.innerHTML = nedtellingHTML(k);
@@ -925,6 +1035,7 @@ function tick() {
       if (wx && wx.innerHTML) wx.innerHTML = '';
     }
   });
+  renderNesteKamp();
 }
 
 renderLagledere();
