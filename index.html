@@ -546,8 +546,12 @@ const kamper = [
   {lag:2,dag:'torsdag',hjem:'Oppsal 2',                  borte:'Lørenskog Blå',         tid:'14:00',arena:'09 EK7'},
   {lag:2,dag:'torsdag',hjem:'Oppsal 2',                  borte:'Heming, IL',            tid:'18:30',arena:'08 EK7'},
   // Felles arrangement
-  {arrangement:true, dag:'fredag', tid:'16:00', tidVisning:'16:00–18:00', sorteringstid:'16:16', varighetMin:120,
+  {arrangement:true, dag:'fredag', tid:'16:15', tidVisning:'16:15–18:00', sorteringstid:'16:16', varighetMin:105,
     tittel:'Pizzafest 🍕', arena:'Basecamp, Ekeberg (hvis været tillater)',
+    countdowns: [
+      { tid:'16:15', varighetMin:30, emoji:'⚽', label:'Heie på Oppsal om' },
+      { tid:'16:45', varighetMin:75, emoji:'🍕', label:'Pizza om' },
+    ],
     tekst:'Felles pizza-feiring etter siste NC-kamp. Planen er å gjøre det på campen på Ekeberg, hvis været tillater. Hvis ikke så blir det alternativ plan. Følg med på Hoopit, og meld på slik at vi vet hvor mye mat som må bestilles. Siste kamp starter kl. 16.15. Vi heier først og feirer etterpå :)'},
 ];
 
@@ -659,11 +663,15 @@ let aktivLag = 'alle', aktivDag = 'alle', aktivSpiller = null;
 let visAvsluttede = false;
 let synlige = [];
 
-function kampStart(k) {
-  const [hh, mm] = k.tid.split(':').map(Number);
-  const d = new Date(dagDato[k.dag]);
+function kampStartFor(dag, tid) {
+  const [hh, mm] = tid.split(':').map(Number);
+  const d = new Date(dagDato[dag]);
   d.setHours(hh, mm, 0, 0);
   return d;
+}
+
+function kampStart(k) {
+  return kampStartFor(k.dag, k.tid);
 }
 
 function kampErAvsluttet(k) {
@@ -762,10 +770,10 @@ function oppmoteHTML(k) {
   return `❗ <span class="nd-label">Seneste oppmøte om</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
 }
 
-function nedtellingHTML(k) {
+function tellNedHTML(dag, tid, varighetMin, emoji, label) {
   const now   = new Date();
-  const start = kampStart(k);
-  const slutt = new Date(start.getTime() + (k.varighetMin || 30) * 60 * 1000);
+  const start = kampStartFor(dag, tid);
+  const slutt = new Date(start.getTime() + varighetMin * 60 * 1000);
 
   if (now >= slutt) {
     return `<span class="nd-pill nd-avsluttet">
@@ -786,9 +794,6 @@ function nedtellingHTML(k) {
   const timer = Math.floor(min / 60);
   const dager = Math.floor(timer / 24);
 
-  const emoji = k.arrangement ? '🍕' : '⚽';
-  const label = k.arrangement ? 'Pizza om' : 'Avspark om';
-
   if (min < 60) {
     const s = sek % 60;
     const m = min % 60;
@@ -800,6 +805,10 @@ function nedtellingHTML(k) {
     return `${emoji} <span class="nd-label">${label}</span> <span class="nd-tall">${h}t ${m}min</span>`;
   }
   return `${emoji} <span class="nd-label">${label}</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
+}
+
+function nedtellingHTML(k) {
+  return tellNedHTML(k.dag, k.tid, k.varighetMin || 30, '⚽', 'Avspark om');
 }
 
 const dagOrder  = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag'];
@@ -1031,7 +1040,7 @@ function render() {
         </div>
         <div class="arrangement-tekst">${k.tekst}</div>
         <div class="kamp-wx" id="wx-${i}"></div>
-        <div class="nedtelling" id="nd-${i}">${nedtellingHTML(k)}</div>
+        ${k.countdowns.map((c, ci) => `<div class="nedtelling" id="nd-${i}-${ci}">${tellNedHTML(k.dag, c.tid, c.varighetMin, c.emoji, c.label)}</div>`).join('')}
       </div>`;
     }
     return `${header}<div class="kamp ${dagKlasse[k.dag]}">
@@ -1063,10 +1072,17 @@ function tick() {
     return;
   }
   synlige.forEach((k, i) => {
-    const nd = document.getElementById('nd-' + i);
-    if (nd) nd.innerHTML = nedtellingHTML(k);
-    const om = document.getElementById('om-' + i);
-    if (om) om.innerHTML = oppmoteHTML(k);
+    if (k.countdowns) {
+      k.countdowns.forEach((c, ci) => {
+        const nd = document.getElementById(`nd-${i}-${ci}`);
+        if (nd) nd.innerHTML = tellNedHTML(k.dag, c.tid, c.varighetMin, c.emoji, c.label);
+      });
+    } else {
+      const nd = document.getElementById('nd-' + i);
+      if (nd) nd.innerHTML = nedtellingHTML(k);
+      const om = document.getElementById('om-' + i);
+      if (om) om.innerHTML = oppmoteHTML(k);
+    }
     if (kampErAvsluttet(k)) {
       const wx = document.getElementById('wx-' + i);
       if (wx && wx.innerHTML) wx.innerHTML = '';
