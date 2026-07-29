@@ -348,6 +348,16 @@
 
   .b1 { background: #D0E3F5; color: #1E4696; }
   .b2 { background: #cce8f0; color: #1B6E8F; }
+  .b-arr { background: #fde8d4; color: #c26212; }
+
+  .kamp-arrangement { border-color: #F0CDA0; }
+
+  .arrangement-tekst {
+    font-size: 12px;
+    color: #4A5568;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
 
   .kamp-tidblokk {
     text-align: right;
@@ -535,6 +545,10 @@ const kamper = [
   {lag:2,dag:'tirsdag',hjem:'Rustad Abildsø SK',         borte:'Oppsal 2',              tid:'16:15',arena:'09 EK7'},
   {lag:2,dag:'torsdag',hjem:'Oppsal 2',                  borte:'Lørenskog Blå',         tid:'14:00',arena:'09 EK7'},
   {lag:2,dag:'torsdag',hjem:'Oppsal 2',                  borte:'Heming, IL',            tid:'18:30',arena:'08 EK7'},
+  // Felles arrangement
+  {arrangement:true, dag:'fredag', tid:'16:00', tidVisning:'16:00–18:00', sorteringstid:'16:16', varighetMin:120,
+    tittel:'Pizzafest 🍕', arena:'Basecamp, Ekeberg (hvis været tillater)',
+    tekst:'Felles pizza-feiring etter siste NC-kamp. Planen er å gjøre det på campen på Ekeberg, hvis været tillater. Hvis ikke så blir det alternativ plan. Følg med på Hoopit, og meld på slik at vi vet hvor mye mat som må bestilles. Siste kamp starter kl. 16.15. Vi heier først og feirer etterpå :)'},
 ];
 
 const dagDato = {
@@ -653,10 +667,11 @@ function kampStart(k) {
 }
 
 function kampErAvsluttet(k) {
-  return new Date() >= new Date(kampStart(k).getTime() + 30 * 60 * 1000);
+  return new Date() >= new Date(kampStart(k).getTime() + (k.varighetMin || 30) * 60 * 1000);
 }
 
 function lagFilterOK(k) {
+  if (k.arrangement) return true;
   return aktivSpiller ? aktivSpiller.includes(k.lag) : (aktivLag === 'alle' || k.lag === aktivLag);
 }
 
@@ -667,7 +682,7 @@ function matcherFilter(k) {
 function finnNesteKamp() {
   return kamper
     .map((k, i) => ({ ...k, _i: i }))
-    .filter(k => lagFilterOK(k) && !kampErAvsluttet(k))
+    .filter(k => !k.arrangement && lagFilterOK(k) && !kampErAvsluttet(k))
     .sort((a, b) => {
       const di = dagOrder.indexOf(a.dag) - dagOrder.indexOf(b.dag);
       return di !== 0 ? di : a.tid.localeCompare(b.tid);
@@ -750,7 +765,7 @@ function oppmoteHTML(k) {
 function nedtellingHTML(k) {
   const now   = new Date();
   const start = kampStart(k);
-  const slutt = new Date(start.getTime() + 30 * 60 * 1000);
+  const slutt = new Date(start.getTime() + (k.varighetMin || 30) * 60 * 1000);
 
   if (now >= slutt) {
     return `<span class="nd-pill nd-avsluttet">
@@ -771,17 +786,20 @@ function nedtellingHTML(k) {
   const timer = Math.floor(min / 60);
   const dager = Math.floor(timer / 24);
 
+  const emoji = k.arrangement ? '🍕' : '⚽';
+  const label = k.arrangement ? 'Pizza om' : 'Avspark om';
+
   if (min < 60) {
     const s = sek % 60;
     const m = min % 60;
-    return `⚽ <span class="nd-label">Avspark om</span> <span class="nd-snart">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+    return `${emoji} <span class="nd-label">${label}</span> <span class="nd-snart">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
   }
   if (timer < 24) {
     const h = timer;
     const m = min % 60;
-    return `⚽ <span class="nd-label">Avspark om</span> <span class="nd-tall">${h}t ${m}min</span>`;
+    return `${emoji} <span class="nd-label">${label}</span> <span class="nd-tall">${h}t ${m}min</span>`;
   }
-  return `⚽ <span class="nd-label">Avspark om</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
+  return `${emoji} <span class="nd-label">${label}</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
 }
 
 const dagOrder  = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag'];
@@ -973,7 +991,7 @@ function render() {
     })
     .sort((a, b) => {
       const di = dagOrder.indexOf(a.dag) - dagOrder.indexOf(b.dag);
-      return di !== 0 ? di : a.tid.localeCompare(b.tid);
+      return di !== 0 ? di : (a.sorteringstid || a.tid).localeCompare(b.sorteringstid || b.tid);
     });
 
   document.getElementById('count').textContent = synlige.length + ' kamper';
@@ -996,6 +1014,25 @@ function render() {
     } else if (aktivDag !== 'alle' && lastDag === null) {
       header = `<h3 class="dag-header">${dagLabelFull[k.dag]}</h3>`;
       lastDag = k.dag;
+    }
+    if (k.arrangement) {
+      return `${header}<div class="kamp kamp-arrangement ${dagKlasse[k.dag]}">
+        <div class="kamp-top">
+          <span class="lag-badge b-arr">Begge lag</span>
+          <div class="kamp-tidblokk">
+            <div class="kamp-tid">${k.tidVisning || k.tid}</div>
+            <div class="kamp-dag">${dagLabel[k.dag]}</div>
+          </div>
+        </div>
+        <div class="kamp-teams">${k.tittel}</div>
+        <div class="kamp-arena">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+          ${k.arena}
+        </div>
+        <div class="arrangement-tekst">${k.tekst}</div>
+        <div class="kamp-wx" id="wx-${i}"></div>
+        <div class="nedtelling" id="nd-${i}">${nedtellingHTML(k)}</div>
+      </div>`;
     }
     return `${header}<div class="kamp ${dagKlasse[k.dag]}">
       <div class="kamp-top">
